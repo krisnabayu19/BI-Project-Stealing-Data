@@ -354,7 +354,7 @@ def pre_data_kecamatan(kecamatan):
     return kecamatan
 
 def lat_lon(tkp):
-    gmaps_key = googlemaps.Client(key='AIzaSyBiM-okLvji2OxJLqfrAaIfSofmwmq8scM')
+    gmaps_key = googlemaps.Client(key='')
     geocode_result = gmaps_key.geocode(tkp)
     try:
         lat = geocode_result[0]["geometry"]["location"]["lat"]

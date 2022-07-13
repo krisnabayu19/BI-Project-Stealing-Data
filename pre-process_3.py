@@ -354,7 +354,7 @@ def pre_data_kecamatan(kecamatan):
     return kecamatan
 
 def lat_lon(tkp):
-    gmaps_key = googlemaps.Client(key='AIzaSyBiM-okLvji2OxJLqfrAaIfSofmwmq8scM')
+    gmaps_key = googlemaps.Client(key='')
     geocode_result = gmaps_key.geocode(tkp)
     try:
         lat = geocode_result[0]["geometry"]["location"]["lat"]
@@ -367,13 +367,10 @@ def lat_lon(tkp):
 
 def normalize_process():
 
-    cursor1.execute("TRUNCATE TABLE tb_laporan_dasar")
     cursor1.execute("TRUNCATE TABLE tb_waktu_lapor")
     cursor1.execute("TRUNCATE TABLE tb_waktu_kejadian")
     cursor1.execute("TRUNCATE TABLE tb_pelapor")
-    cursor1.execute("TRUNCATE TABLE tb_detail_merk_kendaraan")
     cursor1.execute("TRUNCATE TABLE tb_merk_kendaraan")
-    cursor1.execute("TRUNCATE TABLE tb_jenis_merk_kendaraan")
     cursor1.execute("TRUNCATE TABLE tb_teknik_kejahatan")
     cursor1.execute("TRUNCATE TABLE tb_kecamatan")
 
@@ -390,25 +387,10 @@ def normalize_process():
     dataNumWKejadian = 0
     dataNumArrayWKejadian = []
 
-    # TKP
-    dataUniqueTkp = []
-    dataNumTkp = 0
-    dataNumArrayTkp = []
-
-    # Jenis Kendaraan
-    dataUniqueJenis = []
-    dataNumJenis = 0
-    dataNumArrayJenis = []
-
-    # Merk Kendaraan
-    dataUniqueMerk = []
-    dataNumMerk = 0
-    dataNumArrayMerk = []
-
-    # Tahun Kendaraan
-    dataUniqueTahun = []
-    dataNumTahun = 0
-    dataNumArrayTahun = []
+    # Jenis Merk Kendaraan
+    dataUniqueJenisMerk = []
+    dataNumJenisMerk = 0
+    dataNumArrayJenisMerk = []
 
     # Modus
     dataUniqueModus = []
@@ -433,6 +415,7 @@ def normalize_process():
         data_dasar = pre_data_dasar(dasar)
         data_dasar_lp = data_dasar[0]
         data_dasar_waktu = data_dasar[1]
+        print(data_dasar_lp)
 
         # Waktu Lapor
         if data_dasar_waktu not in dataUniqueWLapor and data_dasar_waktu!= ' ':
@@ -443,8 +426,7 @@ def normalize_process():
             val = (data_dasar_waktu)
             cursor1.execute(sql, val)
             db1.commit()
-        else:
-            print('Data Available')
+
 
         # Waktu Kejadian
         data_waktu_kejadian = pre_data_waktu_kejadian(waktu_kejadian)
@@ -456,8 +438,7 @@ def normalize_process():
             val = (data_waktu_kejadian)
             cursor1.execute(sql, val)
             db1.commit()
-        else:
-            print('Data Available')
+
 
         # Pelapor
         data_pelapor = pre_data_pelapor(pelapor)
@@ -467,37 +448,44 @@ def normalize_process():
         data_alamat_pelapor = data_pelapor[3]
         sql = "INSERT INTO tb_pelapor (nama_pelapor,umur_pelapor,gender_pelapor,alamat_pelapor) VALUES (%s,%s,%s,%s)"
         val = (data_nama_pelapor,data_umur_pelapor,data_gender_pelapor,data_alamat_pelapor)
-        # cursor1.execute(sql, val)
-        # db1.commit()
+        cursor1.execute(sql, val)
+        db1.commit()
 
 
-        # Jenis Kendaraan
+        # Merk dan Jenis Kendaraan
         data_jenis_kendaraan = pre_data_jenis_kendaraan(jenis)
         data_jenis = data_jenis_kendaraan[1]
-        if data_jenis not in dataUniqueJenis and data_jenis != '':
-            dataUniqueJenis.append(data_jenis)
-            dataNumJenis = dataNumJenis+1
-            dataNumArrayJenis.append(dataNumJenis)
-            sql = "INSERT INTO tb_merk_kendaraan (merk_kendaraan) VALUES (%s)"
-            val = (data_jenis)
-            # cursor1.execute(sql, val)
-            # db1.commit()
-        else:
-            print('Data Available')
-
-        # Merk Kendaraan
-        data_jenis_kendaraan = pre_data_jenis_kendaraan(jenis)
         data_merk = data_jenis_kendaraan[2]
-        if data_merk not in dataUniqueMerk and data_merk is not None and data_merk != '':
-            dataUniqueMerk.append(data_merk)
-            dataNumMerk = dataNumMerk + 1
-            dataNumArrayMerk.append(dataNumMerk)
-            sql = "INSERT INTO tb_jenis_merk_kendaraan (jenis_merk_kendaraan) VALUES (%s)"
-            val = (data_merk)
-            # cursor1.execute(sql, val)
-            # db1.commit()
+        if data_jenis == '' or data_jenis == ' ' or data_jenis is None:
+            data_jenis = ''
         else:
-            print('Data Available')
+            data_jenis = data_jenis
+
+        if data_merk == '' or data_merk == ' ' or data_merk is None:
+            data_merk = ''
+        else:
+            data_merk = data_merk
+
+        data_jenis_merk = data_jenis,data_merk
+        strDataJenisMerk = ' '.join(data_jenis_merk)
+        if strDataJenisMerk not in dataUniqueJenisMerk:
+            dataUniqueJenisMerk.append(strDataJenisMerk)
+            dataNumJenisMerk = dataNumJenisMerk + 1
+            dataNumArrayJenisMerk.append(dataNumJenisMerk)
+
+            strDataJenisMerk = strDataJenisMerk.split()
+            dataMerkFix = strDataJenisMerk[0]
+            dataJenisFix = strDataJenisMerk[1:]
+            strDataJenisFix = ' '.join(dataJenisFix)
+            if strDataJenisFix == '':
+                strDataJenisFix = None
+            else:
+                strDataJenisFix = strDataJenisFix
+            sql = "INSERT INTO tb_merk_kendaraan (merk_kendaraan,jenis_merk_kendaraan) VALUES (%s,%s)"
+            val = (dataMerkFix,strDataJenisFix)
+            cursor1.execute(sql, val)
+            db1.commit()
+
 
         # Modus
         data_modus = pre_data_modus(modus)
@@ -507,10 +495,9 @@ def normalize_process():
             dataNumArrayMod.append(dataNumModus)
             sql = "INSERT INTO tb_teknik_kejahatan (teknik_kejahatan) VALUES (%s)"
             val = (data_modus)
-            # cursor1.execute(sql, val)
-            # db1.commit()
-        else:
-            print('Data Available')
+            cursor1.execute(sql, val)
+            db1.commit()
+
 
         # Kecamatan
         data_kecamatan = pre_data_kecamatan(kecamatan)
@@ -520,11 +507,9 @@ def normalize_process():
             dataNumArrayKec.append(dataNumKecamatan)
             sql = "INSERT INTO tb_kecamatan (kecamatan) VALUES (%s)"
             val = (data_kecamatan)
-            # cursor1.execute(sql, val)
-            # db1.commit()
-        else:
-            print('Data Available')
-        print('\n')
+            cursor1.execute(sql, val)
+            db1.commit()
+
 
     with open('data-waktu-lapor-unique.csv', 'w', encoding='UTF8',newline='') as f:
         for id_waktu_lapor, value_waktu_lapor in zip(dataNumArrayWLapor,dataUniqueWLapor):
@@ -538,29 +523,12 @@ def normalize_process():
             writer = csv.writer(f)
             writer.writerow(strWaktuKejadian)
 
-    with open('data-tkp-unique.csv', 'w', encoding='UTF8',newline='') as f:
-        for id_tkp, value_tkp in zip(dataNumArrayTkp,dataUniqueTkp):
-            strTkp = [id_tkp,value_tkp]
-            writer = csv.writer(f)
-            writer.writerow(strTkp)
 
-    with open('data-jenis-unique.csv', 'w', encoding='UTF8', newline='') as f:
-        for id_jenis, value_jenis in zip(dataNumArrayJenis, dataUniqueJenis):
-            strJenis = [id_jenis, value_jenis]
+    with open('data-jenis-merk-unique.csv', 'w', encoding='UTF8', newline='') as f:
+        for id_jenis_merk, value_jenis_merk in zip(dataNumArrayJenisMerk, dataUniqueJenisMerk):
+            strJenisMerk = [id_jenis_merk, value_jenis_merk]
             writer = csv.writer(f)
-            writer.writerow(strJenis)
-
-    with open('data-merk-unique.csv', 'w', encoding='UTF8', newline='') as f:
-        for id_merk, value_merk in zip(dataNumArrayMerk, dataUniqueMerk):
-            strMerk = [id_merk, value_merk]
-            writer = csv.writer(f)
-            writer.writerow(strMerk)
-
-    with open('data-tahun-unique.csv', 'w', encoding='UTF8', newline='') as f:
-        for id_tahun, value_tahun in zip(dataNumArrayTahun, dataUniqueTahun):
-            strTahun = [id_tahun, value_tahun]
-            writer = csv.writer(f)
-            writer.writerow(strTahun)
+            writer.writerow(strJenisMerk)
 
     with open('data-modus-unique.csv', 'w', encoding='UTF8', newline='') as f:
         for id_mod, value_mod in zip(dataNumArrayMod, dataUniqueModus):
@@ -579,8 +547,6 @@ def data_store_detail_merk():
 
     query = "SELECT * FROM tb_stagging_data_csv ;"
     data = pd.read_sql(query, db1)
-
-    numData = []
 
     for index, row in data.iterrows():
         jenis = row['jenis']
@@ -621,8 +587,8 @@ def data_store_detail_merk():
         sql = "INSERT INTO tb_detail_merk_kendaraan(id_merk_kendaraan,id_jenis_merk_kendaraan) VALUES (%s,%s)"
         val = (strIdJenisFix,strIdJenisMerkFix)
         print(val)
-        # cursor1.execute(sql, val)
-        # db1.commit()
+        cursor1.execute(sql, val)
+        db1.commit()
 
 def data_store():
     cursor1.execute("TRUNCATE TABLE tb_data_curanmor")
@@ -664,10 +630,22 @@ def data_store():
         data_no_ka = pre_data_no_ka(no_ka)
         data_no_sin = pre_data_no_sin(no_sin)
 
-        # Jenis Kendaraan
+        # Jenis dan Merk Kendaraan
         data_jenis_kendaraan = pre_data_jenis_kendaraan(jenis)
         data_jenis = data_jenis_kendaraan[1]
         data_merk = data_jenis_kendaraan[2]
+        if data_jenis == '' or data_jenis == ' ' or data_jenis is None:
+            data_jenis = ''
+        else:
+            data_jenis = data_jenis
+
+        if data_merk == '' or data_merk == ' ' or data_merk is None:
+            data_merk = ''
+        else:
+            data_merk = data_merk
+        data_jenis_merk = data_jenis,data_merk
+        strDataJenisMerk = ' '.join(data_jenis_merk)
+
 
         # Data Modus
         data_modus = pre_data_modus(modus)
@@ -707,33 +685,22 @@ def data_store():
         else:
             strIdWaktuKejadianFix = strIdWaktuKejadian
 
-        # Data Jenis Kendaraan
-        checkJenis = []
-        with open('data-jenis-unique.csv', 'r', encoding='utf-8') as fileJenis:
-            for lineJenis in fileJenis:
-                clear_line_jenis = lineJenis.replace("\n", '').strip()
-                id_jenis, value_jenis = clear_line_jenis.split(',')
-                if value_jenis in [data_jenis]:
-                    checkJenis.append(id_jenis)
-        strIdJenis = ' '.join(checkJenis)
-        if strIdJenis == '':
-            strIdJenisFix = None
-        else:
-            strIdJenisFix = strIdJenis
-
-        # Data Jenis Merk Kendaraan
+        # Data Jenis dan Merk Kendaraan
         checkJenisMerk = []
-        with open('data-merk-unique.csv', 'r', encoding='utf-8') as fileJenisMerk:
+        with open('data-jenis-merk-unique.csv', 'r', encoding='utf-8') as fileJenisMerk:
             for lineJenisMerk in fileJenisMerk:
                 clear_line_jenis_merk = lineJenisMerk.replace("\n", '').strip()
                 id_jenis_merk, value_jenis_merk = clear_line_jenis_merk.split(',')
-                if value_jenis_merk in [data_merk]:
+                value_jenis_merk = value_jenis_merk.strip()
+                strDataJenisMerk = strDataJenisMerk.strip()
+                if value_jenis_merk in [strDataJenisMerk]:
                     checkJenisMerk.append(id_jenis_merk)
         strIdJenisMerk = ' '.join(checkJenisMerk)
-        if strIdJenisMerk == '':
+        if strIdJenisMerk == '' or strIdJenisMerk == ' ' or strIdJenisMerk is None:
             strIdJenisMerkFix = None
         else:
             strIdJenisMerkFix = strIdJenisMerk
+
 
         # Data Modus ID
         checkModus = []
@@ -763,19 +730,17 @@ def data_store():
         else:
             strIdKecamatanFix = strIdKecamatan
 
-        sql = "INSERT INTO tb_data_curanmor (laporan_dasar,id_waktu_lapor,id_waktu_kejadian,tkp,lat_tkp,lon_tkp,no_pol,no_ka,no_sin,id_pelapor,id_detail_merk_kendaraan,id_teknik_kejahatan,id_kecamatan) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
-        val = (data_dasar_lp, strIdWaktuLaporFix, strIdWaktuKejadianFix, data_tkp, data_tkp_coordinate_lat, data_tkp_coordinate_lon, data_no_pol, data_no_ka, data_no_sin, id_data, id_data, strIdModusFix,strIdKecamatanFix)
+        sql = "INSERT INTO tb_data_curanmor (laporan_dasar,id_waktu_lapor,id_waktu_kejadian,tkp,lat_tkp,lon_tkp,no_pol,no_ka,no_sin,id_pelapor,id_merk_kendaraan,id_teknik_kejahatan,id_kecamatan) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+        val = (data_dasar_lp, strIdWaktuLaporFix, strIdWaktuKejadianFix, data_tkp, data_tkp_coordinate_lat, data_tkp_coordinate_lon, data_no_pol, data_no_ka, data_no_sin, id_data, strIdJenisMerkFix, strIdModusFix,strIdKecamatanFix)
         print(val)
-        # cursor1.execute(sql, val)
-        # db1.commit()
-
-        print('\n')
+        cursor1.execute(sql, val)
+        db1.commit()
 
 def calculation_data():
 
     cursor1.execute("TRUNCATE TABLE tb_data_calculation")
 
-    query = open("data_calculation_2.sql", "r")
+    query = open("data_calculation_3.sql", "r")
     query = query.read()
     data = pd.read_sql(query, db1)
 
@@ -832,14 +797,13 @@ def calculation_data():
         sql = "INSERT INTO tb_data_calculation (dasar,waktu_lapor,waktu_kejadian,rentang_jam_kejadian,tkp,lat_tkp,lon_tkp,nama_pelapor,umur_pelapor,gender_pelapor,alamat_pelapor,merk_kendaraan,jenis_merk_kendaraan,no_pol,no_ka,no_sin,teknik_kejahatan,kecamatan,jumlah_kejahatan,status_jumlah_kejahatan) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
         val = (strDasar,waktu_lapor,waktu_kejadian,rentang_jam_kejadian,tkp,lat_tkp,lon_tkp,nama_pelapor,umur_pelapor,gender_pelapor,alamat_pelapor,merk_kendaraan,jenis_merk_kendaraan,no_pol,no_ka,no_sin,teknik_kejahatan,kecamatan,jumlah_kejahatan,status_jumlah_kejahatan)
         print(val)
-        # cursor1.execute(sql, val)
-        # db1.commit()
+        cursor1.execute(sql, val)
+        db1.commit()
 
 
 # Main
 if __name__ == '__main__':
     print("Start")
-    normalize_process()
-    data_store_detail_merk()
-    data_store()
+    # normalize_process()
+    # data_store()
     calculation_data()

@@ -12,8 +12,7 @@ def miles_to_meters(miles):
         return 0
 
 
-API_KEY = 'AIzaSyARiWpa9iFFUtfwm6LvVPSUIiTvxV5I6AY'
-# API_KEY = 'AIzaSyBiM-okLvji2OxJLqfrAaIfSofmwmq8scM'
+API_KEY = ''
 
 def place_nearby(lat,lng,id):
     map_client = googlemaps.Client(API_KEY)
